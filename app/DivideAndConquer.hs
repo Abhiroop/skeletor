@@ -10,8 +10,8 @@ import GHC.Conc
 -- Or using strategies
 -- parMapVec f v = runEval $ evalTraversable rpar $ V.map f v
 
-par_map :: (prob -> sol) -> Vector prob -> Vector sol
-par_map f probs = undefined
+parMap :: (prob -> sol) -> Vector prob -> Vector sol
+parMap f probs = undefined
 
 
 -- | Zero Assignment Parallel Processor skeleton
@@ -25,7 +25,7 @@ divideAndConquer :: (prob -> Bool)        -- indivisibility test
 divideAndConquer indivisible split join f = func
   where func problem
           | indivisible problem = f problem
-          | otherwise     = (join . par_map f . split) problem
+          | otherwise     = (join . parMap f . split) problem
 
 
 -- | Fixed Degree Divide And Conquer
@@ -42,6 +42,9 @@ fixedDivideAndConquer :: K -- number of subproblems in each split
 fixedDivideAndConquer k indivisible split join f = func
   where func problem
           | indivisible problem = f problem
-          | otherwise = (join k . par_map f . split k) problem
+          | otherwise = (join k . parMap f . split k) problem
 
--- Can we have some fusion rule/deforestation for `join . par_map f . split`
+-- Can we have some fusion rule/deforestation for `join . parMap f . split`
+-- How to make (++) O(1)
+-- Can linear types make (++) O(1)
+-- What is the form of parallelism that we leverage inside parMap. Should experiment with vectorization!
