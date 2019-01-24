@@ -41,6 +41,8 @@ instance Parallelizable ConcList where
   -- parallel versin of conclist with O(1) concat
 ```
 
+Koen mentioned `Data.Sequence` maybe a parallelizable instance for `Data.Sequence` as well
+
 ### RESEARCH QUESTIONS
 
 Can linear haskell give O(1) array concat(using the pointer algo defined in Control.DivideAndConquer)?
