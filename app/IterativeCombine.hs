@@ -51,3 +51,6 @@ iterativeCombine combine value accept = func
 
 
               continue xs = merge (partners xs) xs /= xs -- if fixed point not reached then continue else stop
+
+
+
