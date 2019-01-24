@@ -42,7 +42,13 @@ instance Parallelizable ConcList where
 ```
 
 Koen mentioned `Data.Sequence` maybe a parallelizable instance for `Data.Sequence` as well
+- concat in sequence is O(log(min(n1,n2))).
+- split in sequence is O((n/c)log c); c = size of chunks 
 
 ### RESEARCH QUESTIONS
 
-Can linear haskell give O(1) array concat(using the pointer algo defined in Control.DivideAndConquer)?
+Can linear haskell give O(1) array concat(using the algo defined in Control.DivideAndConquer)?
+
+An idea is instead of actually splitting the array simply detect the indices and work with the indices. In case of `merge` operation find some amortized way of copying.
+
+Advantage of `vector` is its `slice` operation is O(1)
