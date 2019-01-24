@@ -1,10 +1,18 @@
 module DivideAndConquer where
 
 import Data.Vector
+import GHC.Conc
 
+
+-- map each prob to a processor and have a work stealing queue
+-- this is the point of parallelism
+-- Currently Par Monad style parMap
+-- Or using strategies
+-- parMapVec f v = runEval $ evalTraversable rpar $ V.map f v
 
 par_map :: (prob -> sol) -> Vector prob -> Vector sol
 par_map f probs = undefined
+
 
 -- | Zero Assignment Parallel Processor skeleton
 
@@ -26,8 +34,8 @@ type K = Int
 
 fixedDivideAndConquer :: K -- number of subproblems in each split
                       -> (prob -> Bool) -- indivisibility test
-                      -> (K -> prob -> Vector prob) -- split
-                      -> (K -> Vector sol -> sol)   -- join
+                      -> (K -> prob -> Vector prob) -- split -- O(1) with vectors
+                      -> (K -> Vector sol -> sol)   -- join  -- Can this be O(1)? Should be O(1) for arrays
                       -> (prob -> sol)              -- the function to be applied
                       -> prob
                       -> sol
