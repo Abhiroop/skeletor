@@ -1,4 +1,4 @@
-module IterativeCombine where
+module Control.IterativeCombine where
 
 import Data.Vector
 

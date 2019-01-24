@@ -1,4 +1,4 @@
-module DivideAndConquer where
+module Control.DivideAndConquer where
 
 import Data.Vector
 import GHC.Conc

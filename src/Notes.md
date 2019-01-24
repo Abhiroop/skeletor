@@ -4,3 +4,5 @@
 2. iterative combination
 3. clustering
 4. task queues
+
+### Design
