@@ -4,6 +4,10 @@ import Data.Vector
 import GHC.Conc
 
 
+
+-- example for paper: Merge sort
+
+
 -- map each prob to a processor and have a work stealing queue
 -- this is the point of parallelism
 -- Currently Par Monad style parMap

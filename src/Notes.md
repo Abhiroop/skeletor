@@ -52,3 +52,6 @@ Can linear haskell give O(1) array concat(using the algo defined in Control.Divi
 An idea is instead of actually splitting the array simply detect the indices and work with the indices. In case of `merge` operation find some amortized way of copying.
 
 Advantage of `vector` is its `slice` operation is O(1)
+
+
+Or can we not use the pointer algorithm and defer the copying? Basically do one final copy where we merge all the vectors? Some form of lazy copyng?

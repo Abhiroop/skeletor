@@ -12,6 +12,9 @@ combinations n lst = do
     rest   <- combinations (n-1) xs
     return $ x : rest
 
+
+-- Example for paper: Sollin's Algorithm
+
 iterativeCombine :: (Eq obj, Eq val)
                  => (obj -> obj -> obj)  -- combine
                  -> (obj -> obj -> val)  -- value
@@ -34,7 +37,7 @@ iterativeCombine combine value accept = func
               partner will return the best like [(1,2),(2,3),(3,2)(4,2)]
 
               merge will compare the best among them and merge all those possible. For eg in this case
-              only one can be merged. and return the rest so imaging (2,3) is the best so merge will
+              only one can be merged. and return the rest so imagine (2,3) is the best so merge will
               return [1, combine 2 3, 4 5] then continue will test and keep iterating
               -}
               {-
