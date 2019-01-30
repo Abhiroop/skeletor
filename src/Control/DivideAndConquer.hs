@@ -1,5 +1,6 @@
 module Control.DivideAndConquer where
 
+import Control.Parallel
 import Data.Vector
 import GHC.Conc
 
@@ -14,15 +15,16 @@ import GHC.Conc
 -- Or using strategies
 -- parMapVec f v = runEval $ evalTraversable rpar $ V.map f v
 
-parMap :: (prob -> sol) -> Vector prob -> Vector sol
-parMap f probs = undefined
+-- parMap :: (prob -> sol) -> Vector prob -> Vector sol
+-- parMap f probs = undefined
 
 
 -- | Zero Assignment Parallel Processor skeleton
 
-divideAndConquer :: (prob -> Bool)        -- indivisibility test
-                 -> (prob -> Vector prob) -- split
-                 -> (Vector sol -> sol)   -- join
+divideAndConquer :: (Parallelizable t)
+                 => (prob -> Bool)        -- indivisibility test
+                 -> (prob -> t prob) -- split
+                 -> (t sol -> sol)   -- join
                  -> (prob -> sol)         -- the function to be applied
                  -> prob
                  -> sol
@@ -36,10 +38,11 @@ divideAndConquer indivisible split join f = func
 
 type K = Int
 
-fixedDivideAndConquer :: K -- number of subproblems in each split
+fixedDivideAndConquer :: (Parallelizable t)
+                      => K -- number of subproblems in each split
                       -> (prob -> Bool) -- indivisibility test
-                      -> (K -> prob -> Vector prob) -- split -- O(1) with vectors
-                      -> (K -> Vector sol -> sol)   -- join  -- Can this be O(1)? Should be O(1) for arrays
+                      -> (K -> prob -> t prob) -- split -- O(1) with vectors
+                      -> (K -> t sol -> sol)   -- join  -- Can this be O(1)? Should be O(1) for arrays
                       -> (prob -> sol)              -- the function to be applied
                       -> prob
                       -> sol
