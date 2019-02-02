@@ -1,6 +1,7 @@
 module Control.DivideAndConquer where
 
 import Control.Parallel
+import Control.Monad.Par (NFData)
 import Data.Vector
 import GHC.Conc
 
@@ -19,26 +20,9 @@ import GHC.Conc
 -- parMap f probs = undefined
 
 
--- | Zero Assignment Parallel Processor skeleton
-
-divideAndConquer :: (Parallelizable t)
-                 => (prob -> Bool)        -- indivisibility test
-                 -> (prob -> t prob) -- split
-                 -> (t sol -> sol)   -- join
-                 -> (prob -> sol)         -- the function to be applied
-                 -> prob
-                 -> sol
-divideAndConquer indivisible split join f = func
-  where func problem
-          | indivisible problem = f problem
-          | otherwise     = (join . parMap f . split) problem
-
-
 -- | Fixed Degree Divide And Conquer
 
-type K = Int
-
-fixedDivideAndConquer :: (Parallelizable t)
+fixedDivideAndConquer :: (Parallelizable t, NFData sol)
                       => K -- number of subproblems in each split
                       -> (prob -> Bool) -- indivisibility test
                       -> (K -> prob -> t prob) -- split -- O(1) with vectors
@@ -49,7 +33,7 @@ fixedDivideAndConquer :: (Parallelizable t)
 fixedDivideAndConquer k indivisible split join f = func
   where func problem
           | indivisible problem = f problem
-          | otherwise = (join k . parMap f . split k) problem
+          | otherwise = (join k . parMap k f . split k) problem
 
 -- Can we have some fusion rule/deforestation for `join . parMap f . split`
 -- How to make (++) O(1)

@@ -30,6 +30,7 @@ executable skeletor-exe
   build-depends:       base
                      , monad-par
                      , parallel
+                     , random >= 1.1
                      , skeletor
                      , vector
   default-language:    Haskell2010
