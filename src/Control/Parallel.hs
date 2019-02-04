@@ -41,6 +41,7 @@ instance Parallelizable V.Vector where
                                  Nothing -> return q
                                  Just e2 -> do
                                    void $ forkIO $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well
+                                                                         -- additionally merge for vector will be costly
                                    finalq
                       in unsafePerformIO $
                          do {q <- finalq ;
