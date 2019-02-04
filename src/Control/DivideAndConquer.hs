@@ -22,18 +22,13 @@ import GHC.Conc
 
 -- | Fixed Degree Divide And Conquer
 
-fixedDivideAndConquer :: (Parallelizable t, NFData sol)
-                      => K -- number of subproblems in each split
-                      -> (prob -> Bool) -- indivisibility test
-                      -> (K -> prob -> t prob) -- split -- O(1) with vectors
-                      -> (K -> t sol -> sol)   -- join  -- Can this be O(1)? Should be O(1) for arrays
-                      -> (prob -> sol)              -- the function to be applied
-                      -> prob
-                      -> sol
-fixedDivideAndConquer k indivisible split join f = func
-  where func problem
-          | indivisible problem = f problem
-          | otherwise = (join k . parMap k f . split k) problem
+fixedDivideAndConquer :: (Parallelizable t, NFData b)
+                      => K -- number of subproblems in each split for the parallel workload
+                      -> (t a -> t a -> t a) -- the sequential merge operator for parallel workload
+                      -> (t a -> t b)  -- the function to be applied
+                      -> t a
+                      -> t b
+fixedDivideAndConquer = parApply
 
 -- Can we have some fusion rule/deforestation for `join . parMap f . split`
 -- How to make (++) O(1)

@@ -17,13 +17,21 @@ foo = do
   l <- randomList 1000
   print $ sort l
 
+type N = Int
 
--- fixedDivideAndConquer 10 
--- fixedDivideAndConquer :: (Parallelizable t, NFData sol)
---                       => K -- number of subproblems in each split
---                       -> (prob -> Bool) -- indivisibility test
---                       -> (K -> prob -> t prob) -- split -- O(1) with vectors
---                       -> (K -> t sol -> sol)   -- join  -- Can this be O(1)? Should be O(1) for arrays
---                       -> (prob -> sol)              -- the function to be applied
---                       -> prob
---                       -> sol
+sortV :: Vector Int -> Vector Int
+sortV xs
+  | Data.Vector.length xs < 2 = xs
+  | otherwise = let (first,second) = split half xs
+                in merge (sortV first) (sortV second)
+  where
+    half = Data.Vector.length xs `div` 2
+
+merge :: Vector Int -> Vector Int -> Vector Int
+merge = undefined
+
+split :: N -> Vector Int -> (Vector Int, Vector Int)
+split = undefined
+
+bar :: Vector Int -> Vector Int
+bar = fixedDivideAndConquer 10 merge sortV
