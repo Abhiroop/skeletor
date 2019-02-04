@@ -24,11 +24,11 @@ import GHC.Conc
 
 fixedDivideAndConquer :: (Parallelizable t, NFData b)
                       => K -- number of subproblems in each split for the parallel workload
-                      -> (t a -> t a -> t a) -- the sequential merge operator for parallel workload
+                      -> (t b -> t b -> t b) -- the sequential merge operator for parallel workload
                       -> (t a -> t b)  -- the function to be applied
                       -> t a
                       -> t b
-fixedDivideAndConquer = parApply
+fixedDivideAndConquer k merge f = parJoin merge . parSplit k f
 
 -- Can we have some fusion rule/deforestation for `join . parMap f . split`
 -- How to make (++) O(1)
