@@ -29,7 +29,7 @@ instance Parallelizable V.Vector where
         | (i + k) < V.length vec = go (i + k) $ modifyDQ (V.unsafeSlice i k vec)
         | otherwise = modifyDQ (V.unsafeSlice i (V.length vec - i) vec)
         where
-          modifyDQ x = do { q <- dq ; void $ forkIO $ pushR  q (f x) ; return q }
+          modifyDQ x = do { q <- dq ; void $ forkIO $ pushR q (f x) ; return q }
   parJoin merge dq = let finalq = do
                            q <- dq
                            x <- tryPopL q
