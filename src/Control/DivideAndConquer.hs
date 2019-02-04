@@ -22,7 +22,7 @@ import GHC.Conc
 
 -- | Fixed Degree Divide And Conquer
 
-fixedDivideAndConquer :: (Parallelizable t, NFData b)
+fixedDivideAndConquer :: (Parallelizable t)
                       => K -- number of subproblems in each split for the parallel workload
                       -> (t b -> t b -> t b) -- the sequential merge operator for parallel workload
                       -> (t a -> t b)  -- the function to be applied
