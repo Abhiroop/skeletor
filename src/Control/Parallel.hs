@@ -5,6 +5,7 @@ import Data.Concurrent.Deque.Reference
 import qualified Data.Vector as V
 import GHC.Conc
 import System.IO.Unsafe
+import Debug.Trace
 
 type K = Int
 
@@ -20,13 +21,26 @@ class Parallelizable t where
     -> t b
 
 instance Parallelizable V.Vector where
-  parSplit k f vec = go 0 newQ
+  parSplit k f vec = go 0 newQ []
     where
-      go i dq
-        | (i + k) < V.length vec = go (i + k) $ modifyDQ (V.unsafeSlice i k vec)
-        | otherwise = modifyDQ (V.unsafeSlice i (V.length vec - i) vec)
-        where
-          modifyDQ x = do { q <- dq ; forkThread $ pushR q (f x) ; return q }
+      go i dq threads
+        | (i + k) < V.length vec = do
+            q   <- dq;
+            tid <- forkIO $ pushR q (f (V.unsafeSlice i k vec));
+            go (i + k) (return q) (tid :threads)
+        | otherwise = do
+            q <- dq;
+            --- a cyclic barrier ---
+            tids <- traverse threadStatus threads
+            if all (== ThreadFinished) tids
+            then go i dq threads
+            ------------------------
+            else do {
+                    pushR q (f (V.unsafeSlice i (V.length vec - i) vec));
+                    return q
+                    }
+
+
   -- XXX: getNumCapablities should be used instead of just forking threads
   parJoin merge de_q = unsafePerformIO (finalElem de_q) -- don't try this at home
     where
