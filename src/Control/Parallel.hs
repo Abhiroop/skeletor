@@ -32,7 +32,7 @@ instance Parallelizable V.Vector where
             q <- dq;
             --- a cyclic barrier ---
             tids <- traverse threadStatus threads
-            if all (== ThreadFinished) tids
+            if any (/= ThreadFinished) tids
             then go i dq threads
             ------------------------
             else do {

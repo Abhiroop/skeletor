@@ -16,8 +16,10 @@ randomList n = do
 bench1 :: IO ()
 bench1 = do
   l <- randomList 100
+  print $ "Starting sort for list of length " ++ (show $ length l)
   let vec = sortSkel (V.fromList l)
   print $ vec
+  print $ V.length vec
 
 type N = Int
 
