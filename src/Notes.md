@@ -45,6 +45,29 @@ Koen mentioned `Data.Sequence` maybe a parallelizable instance for `Data.Sequenc
 - concat in sequence is O(log(min(n1,n2))).
 - split in sequence is O((n/c)log c); c = size of chunks 
 
+
+
+### Other Design
+
+For divide and conquer what if we have:
+
+```
+class ForkJoin t where
+  unit :: t a
+  slice :: Int -> Int -> t a -> t a
+```
+
+And then define
+```
+instance ForkJoin Vector where
+  unit = empty
+  slice = unsafeSlice
+```
+
+and then `parSplit` and `parJoin` can be entirely defined in terms of some instance of `ForkJoin t`
+
+
+
 ### RESEARCH QUESTIONS
 
 Can linear haskell give O(1) array concat(using the algo defined in Control.DivideAndConquer)?

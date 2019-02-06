@@ -15,10 +15,10 @@ randomList n = do
 
 bench1 :: IO ()
 bench1 = do
-  l <- randomList 100
+  l <- randomList 1000000
   print $ "Starting sort for list of length " ++ (show $ length l)
   let vec = sortSkel (V.fromList l)
-  print $ vec
+  --print $ vec
   print $ V.length vec
 
 type N = Int
@@ -48,4 +48,4 @@ split :: N -> V.Vector Int -> (V.Vector Int, V.Vector Int)
 split = V.splitAt
 
 sortSkel :: V.Vector Int -> V.Vector Int
-sortSkel = fixedDivideAndConquer 10 merge sortV
+sortSkel = fixedDivideAndConquer 5000 merge sortV
