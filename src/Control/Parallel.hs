@@ -1,13 +1,10 @@
 module Control.Parallel where
 
-import Control.Monad (join, void)
+import Control.Monad (void)
 import Data.Concurrent.Deque.Reference
 import qualified Data.Vector as V
 import GHC.Conc
 import System.IO.Unsafe
-
-import Data.List
-import Data.Maybe
 
 type K = Int
 
@@ -29,22 +26,22 @@ instance Parallelizable V.Vector where
         | (i + k) < V.length vec = go (i + k) $ modifyDQ (V.unsafeSlice i k vec)
         | otherwise = modifyDQ (V.unsafeSlice i (V.length vec - i) vec)
         where
-          modifyDQ x = do { q <- dq ; void $ forkIO $ pushR q (f x) ; return q }
+          modifyDQ x = do { q <- dq ; forkThread $ pushR q (f x) ; return q }
   -- XXX: getNumCapablities should be used instead of just forking threads
-  parJoin merge dq = let finalq = do
-                           q <- dq
-                           x <- tryPopL q
-                           case x of
-                             Nothing -> return q
-                             Just e1 -> do
-                               y <- tryPopL q
-                               case y of
-                                 Nothing -> return q
-                                 Just e2 -> do
-                                   void $ forkIO $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well
-                                                                         -- additionally merge for vector will be costly
-                                   finalq
-                      in unsafePerformIO $
-                         do {q <- finalq ;
-                             e <- tryPopL q ;
-                             maybe (return V.empty) return e}
+  parJoin merge de_q = unsafePerformIO (finalElem de_q) -- don't try this at home
+    where
+      finalElem dq = do
+        q <- dq
+        x <- tryPopL q
+        case x of
+          Nothing -> return V.empty
+          Just e1 -> do
+            y <- tryPopL q
+            case y of
+              Nothing -> return e1
+              Just e2 -> do
+                pushR q (merge e1 e2) -- cpu intensive could be vectorized as well additionally merge for vector will be costly
+                finalElem (return q)
+
+forkThread :: IO () -> IO ()
+forkThread = void . forkIO

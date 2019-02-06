@@ -1,4 +1,7 @@
 module Main where
 
+
+import Bench.Sort
+
 main :: IO ()
-main = print "Hello World"
+main = bench1
