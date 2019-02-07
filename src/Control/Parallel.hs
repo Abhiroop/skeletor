@@ -1,11 +1,14 @@
 module Control.Parallel where
 
 import Control.Monad (void)
+import Data.List (partition)
 import Data.Concurrent.Deque.Reference
-import qualified Data.Vector as V
 import GHC.Conc
-import System.IO.Unsafe
+import System.IO.Unsafe (unsafePerformIO)
 import Debug.Trace
+import Utils
+
+import qualified Data.Vector as V
 
 type K = Int
 
@@ -32,39 +35,50 @@ instance Parallelizable V.Vector where
         | otherwise = do
             q <- dq;
             --- a cyclic barrier ---
-            tids <- traverse threadStatus threads
-            if any (/= ThreadFinished) tids
+            tStatus <- traverse threadStatus threads
+            if any (/= ThreadFinished) tStatus
             then go i dq threads
             ------------------------
             else do {
                     pushR q (f (V.unsafeSlice i (V.length vec - i) vec));
-                    mapM_ killThread threads; -- be a good citizen! clean up resources! XXX: This is an O(n) operation could it slow us down?
+                    killThreads threads; -- be a good citizen! clean up resources! XXX: This is an O(n) operation could it slow us down?
                     return q
                     }
-
 
   -- XXX: getNumCapablities should be used instead of just spawning new threads??
   parJoin merge de_q = unsafePerformIO (finalElem de_q []) -- don't try this at home
     where
       finalElem dq threads = do
         q <- dq
-        tids <- traverse threadStatus threads -- O(n) traversal everytime could we reduce it?
+        (idleThreads, activeThreads) <- partitionM (\tid -> do {
+                                                      tStatus <- threadStatus tid;
+                                                      return $ tStatus == ThreadFinished}) threads
         x <- tryPopL q
         case x of
-          Nothing -> do {
-                        if all (== ThreadFinished) tids
-                        then return V.empty
-                        else finalElem (return q) threads
-                        }
+          Nothing -> if null activeThreads
+                     then do { killThreads idleThreads; return V.empty }
+                     else do { killThreads idleThreads; finalElem (return q) activeThreads }
           Just e1 -> do
             y <- tryPopL q
             case y of
-              Nothing -> do {
-                            if all (== ThreadFinished) tids
-                            then do { mapM_ killThread threads; return e1 } -- be a good citizen! resource cleanup
-                            else finalElem (do {pushR q e1; return q}) threads -- XXX: V.V Subtle: popped an element and found that there are threads running;
-                                                                               --                  put the element back and spin
-                            }
+              Nothing -> if null activeThreads
+                         then do { killThreads idleThreads; return e1 } -- be a good citizen! resource cleanup
+                         else do { killThreads idleThreads;
+                                   finalElem (do {pushR q e1; return q}) activeThreads} -- XXX: Subtle: popped an element and found that there are threads running;
+                                                                                        --              put the element back and spin
               Just e2 -> do
-                tid <- forkIO $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well additionally merge for vector will be costly
+                tid <- forkIO $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well additionally merge for vector will be1 costly
                 finalElem (return q) (tid:threads)
+
+{- Alternative more efficient threading design:
+We need something called `partitionM`
+
+partitionM :: (Monad m ) => (a -> m Bool) -> [a] -> ([a], [a])
+
+let (deadThreads, liveThreads) = partition (== ThreadFinished) tStatus
+if length liveThreads == 0
+then kill all dead threads and return
+else do {kill dead threads; recurse with the live threads}
+
+
+-}

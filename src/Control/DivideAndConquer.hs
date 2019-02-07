@@ -30,6 +30,27 @@ fixedDivideAndConquer :: (Parallelizable t)
                       -> t b
 fixedDivideAndConquer k merge f = parJoin merge . parSplit k f
 
+
+
+fixedDivideAndConquer' :: (Parallelizable t)
+                      => K -- number of subproblems in each split for the parallel workload
+                      -> (t b -> t b -> t b) -- parallel merge
+                      -> (t b -> t b -> t b) -- sequential merge
+                      -> (t a -> (t a, t a)) -- sequential split
+                      -> (t a -> Bool)
+                      -> (t a -> t b)
+                      -> t a
+                      -> t b
+fixedDivideAndConquer' k parMerge seqMerge seqSplit continue f
+  = parJoin parMerge . parSplit k func
+  where
+    func ta
+      | continue ta = f ta
+      | otherwise   = let (first, second) = seqSplit ta
+                       in seqMerge (func first) (func second)
+
+
+
 -- Can we have some fusion rule/deforestation for `join . parMap f . split`
 -- How to make (++) O(1)
 -- Can linear types make (++) O(1)
