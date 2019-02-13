@@ -2,9 +2,9 @@ module Control.DivideAndConquer where
 
 import Control.Parallel
 import Control.Monad.Par (NFData)
-import Data.Vector
+import Data.Vector hiding (foldl')
 import GHC.Conc
-
+import Data.Foldable (foldl')
 
 
 -- example for paper: Merge sort
@@ -37,8 +37,8 @@ fixedDivideAndConquer' :: (Parallelizable t)
                       -> (t b -> t b -> t b) -- parallel merge
                       -> (t b -> t b -> t b) -- sequential merge
                       -> (t a -> (t a, t a)) -- sequential split
-                      -> (t a -> Bool)
-                      -> (t a -> t b)
+                      -> (t a -> Bool)       -- divide further?
+                      -> (t a -> t b)        -- a general function mostly use id for same datatype
                       -> t a
                       -> t b
 fixedDivideAndConquer' k parMerge seqMerge seqSplit continue f
@@ -48,6 +48,25 @@ fixedDivideAndConquer' k parMerge seqMerge seqSplit continue f
       | continue ta = f ta
       | otherwise   = let (first, second) = seqSplit ta
                        in seqMerge (func first) (func second)
+
+fixedDivideAndConquer'' :: (Parallelizable t, Foldable t, Monoid (t b), Eq (t a))
+                      => K -- number of subproblems in each split for the parallel workload
+                      -> (t b -> t b -> t b) -- parallel merge
+                      -> (t b -> t b -> t b) -- sequential merge
+                      -> (t a -> t (t a))    -- sequential split
+                      -> (t a -> Bool)       -- divide further?
+                      -> (t a -> t b)        -- a general function mostly use id for same datatype
+                      -> t a
+                      -> t b
+fixedDivideAndConquer'' k parMerge seqMerge seqSplit continue f
+  = parJoin parMerge . parSplit k func
+  where
+    func ta
+      | continue ta = f ta
+      | otherwise   = let tta = seqSplit ta
+                       in foldl' (\u ta' -> if ta' == ta
+                                            then u `seqMerge` f ta -- fix point reached
+                                            else u `seqMerge` (func ta')) mempty tta
 
 
 
