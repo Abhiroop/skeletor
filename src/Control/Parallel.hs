@@ -25,6 +25,7 @@ class Parallelizable t where
 
 
 instance Parallelizable V.Vector where
+  {-# INLINE parSplit #-}
   parSplit k f vec = go 0 newQ []
     where
       go i dq threads
@@ -46,6 +47,7 @@ instance Parallelizable V.Vector where
                     }
 
   -- XXX: getNumCapablities should be used instead of just spawning new threads??
+  {-# INLINE parJoin #-}
   parJoin merge de_q = unsafePerformIO (finalElem de_q []) -- don't try this at home
     where
       finalElem dq threads = do

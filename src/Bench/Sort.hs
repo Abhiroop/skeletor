@@ -18,21 +18,19 @@ randomList n = do
 
 bench1 :: IO ()
 bench1 = do
-  l <- randomList 100
+  l <- randomList 100000
   print $ "Starting sort for list of length " ++ show (length l)
-  let vec = sortSkel' (V.fromList l)
-  print vec
+  let --vec   = mergesort (V.fromList l)
+      -- vec   = sortSkelM (V.fromList l)
+      vec   = msortSkel (V.fromList l)
+  --print vec
   print $ V.length vec
 
-type N = Int
 
-mergesort :: V.Vector Int -> V.Vector Int
-mergesort xs
-  | V.length xs < 2 = xs
-  | otherwise = let (first,second) = split half xs
-                in merge (mergesort first) (mergesort second)
-  where
-    half = V.length xs `div` 2
+parallelWorkLoad :: Int
+parallelWorkLoad = 1000
+-------------------------------------------------------------------------------------
+-- Merge sort
 
 merge :: V.Vector Int -> V.Vector Int -> V.Vector Int
 merge xs ys
@@ -47,21 +45,50 @@ merge xs ys
           then V.cons h1 (merge t1 ys)
           else V.cons h2 (merge xs t2)
 
-split :: N -> V.Vector Int -> (V.Vector Int, V.Vector Int)
-split = V.splitAt
+-- Merge sort sequential
+mergesort :: V.Vector Int -> V.Vector Int
+mergesort xs
+  | V.length xs < 2 = xs
+  | otherwise = let (first,second) = V.splitAt half xs
+                in merge (mergesort first) (mergesort second)
+  where
+    half = V.length xs `div` 2
 
-sortSkel :: V.Vector Int -> V.Vector Int
-sortSkel = fixedDivideAndConquer 1000 merge mergesort
+-- Merge sort parallel
+sortSkelM :: V.Vector Int -> V.Vector Int
+sortSkelM = fixedDivideAndConquer parallelWorkLoad merge mergesort
 
-sortSkel' :: V.Vector Int -> V.Vector Int
-sortSkel' = fixedDivideAndConquer'' 10 merge merge m_partition (\x -> V.length x < 2) id
+-- Merge sort parallel and more general
+msortSkel :: V.Vector Int -> V.Vector Int
+msortSkel = fixedDivideAndConquer' parallelWorkLoad merge merge m_partition (\x -> V.length x < 2) id
   where
     m_partition xs
       = let (first, second) = V.splitAt (V.length xs `div` 2) xs
          in V.fromList [first,second]
 
-qsortSkel' :: V.Vector Int -> V.Vector Int
-qsortSkel' = fixedDivideAndConquer'' 10 merge (V.++) q_partition (\x -> V.length x < 2) id
+--------------------------------------------------------------------------
+-- Quick sort
+
+-- Quick sort sequential
+qsort :: V.Vector Int -> V.Vector Int
+qsort xs
+  | V.length xs < 2 = xs
+  | otherwise
+    = let h = V.head xs
+          small = V.filter (< h) xs
+          mid   = V.filter (== h) xs
+          large = V.filter (> h) xs
+       in (qsort small) V.++ mid V.++ (qsort large)
+
+
+-- Quick sort parallel; uses the same function for parallel merging as merge sort
+sortSkelQ :: V.Vector Int -> V.Vector Int
+sortSkelQ = fixedDivideAndConquer parallelWorkLoad merge qsort
+
+
+-- Quick sort parallel and more general
+qsortSkel :: V.Vector Int -> V.Vector Int
+qsortSkel = fixedDivideAndConquer' parallelWorkLoad merge (V.++) q_partition (\x -> V.length x < 2) id
   where
     q_partition xs
       = let h = V.head xs
@@ -70,34 +97,8 @@ qsortSkel' = fixedDivideAndConquer'' 10 merge (V.++) q_partition (\x -> V.length
             large = V.filter (> h) xs
          in V.fromList [small, mid, large]
 
---qsortSkel = fixedDivideAndConquer 10 merge qsort
 
-qsort' :: V.Vector Int -> V.Vector Int
-qsort' xs
-  | V.length xs < 2 = xs
-  | otherwise
-    = let h = V.head xs
-          small = V.filter (< h) xs
-          mid   = V.filter (== h) xs
-          large = V.filter (> h) xs
-       in (qsort' small) V.++ mid V.++ (qsort' large)
-
-q_partition xs
-  = let h = V.head xs
-        small = V.filter (< h) xs
-        mid   = V.filter (== h) xs
-        large = V.filter (> h) xs
-     in V.fromList [small, mid, large]
-
-func :: V.Vector Int -> V.Vector Int
-func ta
-  | (\x -> V.length x < 2) ta = trace ("abhi" ++ show ta) id ta
-  | otherwise   = let tta = q_partition ta
-                   in foldl' (\u ta' -> if ta' == ta then u V.++ id ta' else u V.++ (func ta')) mempty tta
-
---------------------------------------------------
-
-
+-- A more pragmatic quick sort
 -- qsort :: (Ord a) => V.Vector a -> V.Vector a
 -- qsort = V.modify go where
 --     go xs | M.length xs < 2 = return ()
@@ -108,12 +109,4 @@ func ta
 --             k <- M.unstablePartition (== p) pr
 --             go l;
 --             go $ M.drop k pr
-
--- qsort xs
---   | V.length xs == 0 = V.empty
---   | otherwise = qsort small V.++ qsort large
---   where
---     small = V.filter (<= x) xs
---     large = V.filter (> x) xs
---     x     = V.head xs
 
