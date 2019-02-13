@@ -58,7 +58,18 @@ mergesort xs
 sortSkelM :: V.Vector Int -> V.Vector Int
 sortSkelM = fixedDivideAndConquer parallelWorkLoad merge mergesort
 
+
+-- specialising perhaps saves the dictionary lookup but isn't a huge optimisation
 -- Merge sort parallel and more general
+{-# SPECIALISE fixedDivideAndConquer' :: Int
+                      -> (V.Vector Int -> V.Vector Int -> V.Vector Int)
+                      -> (V.Vector Int -> V.Vector Int -> V.Vector Int)
+                      -> (V.Vector Int -> [(V.Vector Int)])
+                      -> (V.Vector Int -> Bool)
+                      -> (V.Vector Int -> V.Vector Int)
+                      -> V.Vector Int
+                      -> V.Vector Int
+ #-}
 msortSkel :: V.Vector Int -> V.Vector Int
 msortSkel = fixedDivideAndConquer' parallelWorkLoad merge merge m_partition (\x -> V.length x < 2) id
   where

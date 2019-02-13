@@ -1,6 +1,7 @@
 module Control.DivideAndConquer where
 
 import Control.Parallel
+import Data.Vector hiding (foldl')
 import Data.Foldable (foldl')
 
 
@@ -27,7 +28,7 @@ fixedDivideAndConquer :: (Parallelizable t)
                       -> t b
 fixedDivideAndConquer k merge f = parJoin merge . parSplit k f
 
-
+{-# INLINE fixedDivideAndConquer' #-}
 fixedDivideAndConquer' :: (Parallelizable t, Foldable m, Monoid (t b), Eq (t a))
                       => K -- number of subproblems in each split for the parallel workload
                       -> (t b -> t b -> t b) -- parallel merge

@@ -9,6 +9,6 @@ partitionM f (x:xs) = do
     (as,bs) <- partitionM f xs
     return ([x | res]++as, [x | not res]++bs)
 
-
+{-# INLINE killThreads #-}
 killThreads :: Foldable t => t ThreadId -> IO ()
 killThreads = mapM_ killThread

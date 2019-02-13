@@ -25,7 +25,7 @@ class Parallelizable t where
 
 
 instance Parallelizable V.Vector where
-  {-# INLINE parSplit #-}
+
   parSplit k f vec = go 0 newQ []
     where
       go i dq threads
@@ -47,30 +47,65 @@ instance Parallelizable V.Vector where
                     }
 
   -- XXX: getNumCapablities should be used instead of just spawning new threads??
-  {-# INLINE parJoin #-}
   parJoin merge de_q = unsafePerformIO (finalElem de_q []) -- don't try this at home
     where
       finalElem dq threads = do
         q <- dq
-        (idleThreads, activeThreads) <- partitionM (\tid -> do {
-                                                      tStatus <- threadStatus tid;
-                                                      return $ tStatus == ThreadFinished}) threads
+        tids <- traverse threadStatus threads -- O(n) traversal everytime could we reduce it?
         x <- tryPopL q
         case x of
-          Nothing -> if null activeThreads
-                     then do { killThreads idleThreads; return V.empty }
-                     else do { killThreads idleThreads; finalElem (return q) activeThreads }
+          Nothing -> do {
+                        if all (== ThreadFinished) tids
+                        then do {killThreads threads; return V.empty}
+                        else finalElem (return q) threads
+                        }
           Just e1 -> do
             y <- tryPopL q
             case y of
-              Nothing -> if null activeThreads
-                         then do { killThreads idleThreads; return e1 } -- be a good citizen! resource cleanup
-                         else do { killThreads idleThreads;
-                                   finalElem (do {pushR q e1; return q}) activeThreads} -- XXX: Subtle: popped an element and found that there are threads running;
-                                                                                        --              put the element back and spin
+              Nothing -> do {
+                            if all (== ThreadFinished) tids
+                            then do { killThreads threads; return e1 } -- be a good citizen! resource cleanup
+                            else finalElem (do {pushR q e1; return q}) threads -- XXX: V.V Subtle: popped an element and found that there are threads running;
+                                                                               --                  put the element back and spin
+                            }
               Just e2 -> do
-                tid <- forkIO $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well additionally merge for vector will be1 costly
+                tid <- forkIO $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well additionally merge for vector will be costly
                 finalElem (return q) (tid:threads)
+
+
+
+
+--------------------------------------------------------
+-- Simpler thread management strategy seems to be faster
+
+
+
+
+-- XXX: getNumCapablities should be used instead of just spawning new threads??
+
+  -- parJoin merge de_q = unsafePerformIO (finalElem de_q []) -- don't try this at home
+  --   where
+  --     finalElem dq threads = do
+  --       q <- dq
+  --       (idleThreads, activeThreads) <- partitionM (\tid -> do {
+  --                                                     tStatus <- threadStatus tid;
+  --                                                     return $ tStatus == ThreadFinished}) threads
+  --       x <- tryPopL q
+  --       case x of
+  --         Nothing -> if null activeThreads
+  --                    then do { killThreads idleThreads; return V.empty }
+  --                    else do { killThreads idleThreads; finalElem (return q) activeThreads }
+  --         Just e1 -> do
+  --           y <- tryPopL q
+  --           case y of
+  --             Nothing -> if null activeThreads
+  --                        then do { killThreads idleThreads; return e1 } -- be a good citizen! resource cleanup
+  --                        else do { killThreads idleThreads;
+  --                                  finalElem (do {pushR q e1; return q}) activeThreads} -- XXX: Subtle: popped an element and found that there are threads running;
+  --                                                                                       --              put the element back and spin
+  --             Just e2 -> do
+  --               tid <- forkIO $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well additionally merge for vector will be1 costly
+  --               finalElem (return q) (tid:threads)
 
 {- Alternative more efficient threading design:
 We need something called `partitionM`
