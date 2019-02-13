@@ -1,5 +1,6 @@
 module Utils where
 
+import Control.Concurrent.Async
 import GHC.Conc
 
 partitionM :: Monad m => (a -> m Bool) -> [a] -> m ([a], [a])
@@ -12,3 +13,6 @@ partitionM f (x:xs) = do
 
 killThreads :: Foldable t => t ThreadId -> IO ()
 killThreads = mapM_ killThread
+
+killAsyncs :: (Functor t, Foldable t) => t (Async a) -> IO ()
+killAsyncs = mapM_ cancel
