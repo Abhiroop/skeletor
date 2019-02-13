@@ -1,11 +1,9 @@
 module Control.Parallel where
 
-import Control.Monad (void)
-import Data.List (partition)
+import Control.Concurrent.Async
 import Data.Concurrent.Deque.Reference
 import GHC.Conc
 import System.IO.Unsafe (unsafePerformIO)
-import Debug.Trace
 import Utils
 
 import qualified Data.Vector as V
@@ -31,18 +29,18 @@ instance Parallelizable V.Vector where
       go i dq threads
         | (i + k) < V.length vec = do
             q   <- dq;
-            tid <- forkIO $ pushR q (f (V.unsafeSlice i k vec));
+            tid <- async $ pushR q (f (V.unsafeSlice i k vec));
             go (i + k) (return q) (tid :threads)
         | otherwise = do
             q <- dq;
             --- a cyclic barrier ---
-            tStatus <- traverse threadStatus threads
+            tStatus <- traverse (threadStatus . asyncThreadId) threads
             if any (/= ThreadFinished) tStatus
             then go i dq threads
             ------------------------
             else do {
                     pushR q (f (V.unsafeSlice i (V.length vec - i) vec));
-                    killThreads threads; -- be a good citizen! clean up resources! XXX: This is an O(n) operation could it slow us down?
+                    killAsyncs threads; -- be a good citizen! clean up resources! XXX: This is an O(n) operation could it slow us down?
                     return q
                     }
 
@@ -53,23 +51,23 @@ instance Parallelizable V.Vector where
       finalElem dq threads = do
         q <- dq
         (idleThreads, activeThreads) <- partitionM (\tid -> do {
-                                                      tStatus <- threadStatus tid;
+                                                      tStatus <- (threadStatus . asyncThreadId) tid;
                                                       return $ tStatus == ThreadFinished}) threads
         x <- tryPopL q
         case x of
           Nothing -> if null activeThreads
-                     then do { killThreads idleThreads; return V.empty }
-                     else do { killThreads idleThreads; finalElem (return q) activeThreads }
+                     then do { killAsyncs idleThreads; return V.empty }
+                     else do { killAsyncs idleThreads; finalElem (return q) activeThreads }
           Just e1 -> do
             y <- tryPopL q
             case y of
               Nothing -> if null activeThreads
-                         then do { killThreads idleThreads; return e1 } -- be a good citizen! resource cleanup
-                         else do { killThreads idleThreads;
+                         then do { killAsyncs idleThreads; return e1 } -- be a good citizen! resource cleanup
+                         else do { killAsyncs idleThreads;
                                    finalElem (do {pushR q e1; return q}) activeThreads} -- XXX: Subtle: popped an element and found that there are threads running;
                                                                                         --              put the element back and spin
               Just e2 -> do
-                tid <- forkIO $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well additionally merge for vector will be1 costly
+                tid <- async $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well additionally merge for vector will be1 costly
                 finalElem (return q) (tid:threads)
 
 {- Alternative more efficient threading design:
