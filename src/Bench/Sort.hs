@@ -20,7 +20,7 @@ bench1 :: IO ()
 bench1 = do
   l <- randomList 100000
   print $ "Starting sort for list of length " ++ show (length l)
-  let --vec   = mergesort (V.fromList l)
+  let -- vec   = mergesort (V.fromList l)
       -- vec   = sortSkelM (V.fromList l)
       vec   = msortSkel (V.fromList l)
   --print vec
@@ -64,7 +64,7 @@ msortSkel = fixedDivideAndConquer' parallelWorkLoad merge merge m_partition (\x 
   where
     m_partition xs
       = let (first, second) = V.splitAt (V.length xs `div` 2) xs
-         in V.fromList [first,second]
+         in [first,second]
 
 --------------------------------------------------------------------------
 -- Quick sort
@@ -95,7 +95,7 @@ qsortSkel = fixedDivideAndConquer' parallelWorkLoad merge (V.++) q_partition (\x
             small = V.filter (< h) xs
             mid   = V.filter (== h) xs
             large = V.filter (> h) xs
-         in V.fromList [small, mid, large]
+         in [small, mid, large]
 
 
 -- A more pragmatic quick sort

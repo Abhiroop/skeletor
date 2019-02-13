@@ -28,11 +28,11 @@ fixedDivideAndConquer :: (Parallelizable t)
 fixedDivideAndConquer k merge f = parJoin merge . parSplit k f
 
 
-fixedDivideAndConquer' :: (Parallelizable t, Foldable t, Monoid (t b), Eq (t a))
+fixedDivideAndConquer' :: (Parallelizable t, Foldable m, Monoid (t b), Eq (t a))
                       => K -- number of subproblems in each split for the parallel workload
                       -> (t b -> t b -> t b) -- parallel merge
                       -> (t b -> t b -> t b) -- sequential merge
-                      -> (t a -> t (t a))    -- sequential split
+                      -> (t a -> m (t a))    -- sequential split
                       -> (t a -> Bool)       -- divide further?
                       -> (t a -> t b)        -- a general function mostly use id for same datatype
                       -> t a
@@ -42,10 +42,10 @@ fixedDivideAndConquer' k parMerge seqMerge seqSplit continue f
   where
     func ta
       | continue ta = f ta
-      | otherwise   = let tta = seqSplit ta
+      | otherwise   = let mta = seqSplit ta
                        in foldl' (\u ta' -> if ta' == ta
                                             then u `seqMerge` f ta -- fix point reached
-                                            else u `seqMerge` (func ta')) mempty tta
+                                            else u `seqMerge` (func ta')) mempty mta
 
 
 -- Can we have some fusion rule/deforestation for `join . parMap f . split`
