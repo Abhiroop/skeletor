@@ -9,6 +9,7 @@ import Debug.Trace
 import Utils
 
 import qualified Data.Vector as V
+import qualified Data.Sequence as S
 
 type K = Int
 
@@ -120,3 +121,47 @@ else do {kill dead threads; recurse with the live threads}
 
 
 -}
+instance Parallelizable S.Seq where
+  {-# INLINE parSplit #-}
+  parSplit k f s = go s newQ []
+    where
+      go s' dq threads
+        | S.length s' == 0 = do
+            q <- dq;
+            --- a cyclic barrier ---
+            tStatus <- traverse threadStatus threads
+            if any (/= ThreadFinished) tStatus
+            then go s' dq threads
+            ------------------------
+            else do { killThreads threads; return q}
+
+        | otherwise = do
+            q   <- dq;
+            let (s1, s2) = S.splitAt k s'
+            tid <- forkIO $ pushR q (f s1);
+            go s2 (return q) (tid :threads)
+
+  {-# INLINE parJoin #-}
+  parJoin merge de_q = unsafePerformIO (finalElem de_q [])
+    where
+      finalElem dq threads = do
+        q <- dq
+        tids <- traverse threadStatus threads
+        x <- tryPopL q
+        case x of
+          Nothing -> do {
+                        if all (== ThreadFinished) tids
+                        then do {killThreads threads; return S.empty}
+                        else finalElem (return q) threads
+                        }
+          Just e1 -> do
+            y <- tryPopL q
+            case y of
+              Nothing -> do {
+                            if all (== ThreadFinished) tids
+                            then do { killThreads threads; return e1 }
+                            else finalElem (do {pushR q e1; return q}) threads
+                            }
+              Just e2 -> do
+                tid <- forkIO $ pushR q (merge e1 e2)
+                finalElem (return q) (tid:threads)
