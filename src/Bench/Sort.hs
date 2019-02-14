@@ -55,23 +55,32 @@ mergesort xs
     half = V.length xs `div` 2
 
 -- Merge sort parallel
-sortSkelM :: V.Vector Int -> V.Vector Int
-sortSkelM = fixedDivideAndConquer parallelWorkLoad merge mergesort
 
+{-
+
+{-# INLINE[1] id' #-}
+id' :: a -> a
+id' x = x
+
+{-# RULES
+  "fmap/id"    forall xs (id' :: a -> a).  fmap id' xs = xs
+    #-}
+
+-}
 
 -- specialising perhaps saves the dictionary lookup but isn't a huge optimisation
 -- Merge sort parallel and more general
-{-# SPECIALISE fixedDivideAndConquer' :: Int
+{-# SPECIALISE fixedDivideAndConquer :: Int
                       -> (V.Vector Int -> V.Vector Int -> V.Vector Int)
                       -> (V.Vector Int -> V.Vector Int -> V.Vector Int)
                       -> (V.Vector Int -> [(V.Vector Int)])
                       -> (V.Vector Int -> Bool)
-                      -> (V.Vector Int -> V.Vector Int)
+                      -> (Int -> Int)
                       -> V.Vector Int
                       -> V.Vector Int
  #-}
 msortSkel :: V.Vector Int -> V.Vector Int
-msortSkel = fixedDivideAndConquer' parallelWorkLoad merge merge m_partition (\x -> V.length x < 2) id
+msortSkel = fixedDivideAndConquer parallelWorkLoad merge merge m_partition (\x -> V.length x < 2) id
   where
     m_partition xs
       = let (first, second) = V.splitAt (V.length xs `div` 2) xs
@@ -92,14 +101,9 @@ qsort xs
        in (qsort small) V.++ mid V.++ (qsort large)
 
 
--- Quick sort parallel; uses the same function for parallel merging as merge sort
-sortSkelQ :: V.Vector Int -> V.Vector Int
-sortSkelQ = fixedDivideAndConquer parallelWorkLoad merge qsort
-
-
 -- Quick sort parallel and more general
 qsortSkel :: V.Vector Int -> V.Vector Int
-qsortSkel = fixedDivideAndConquer' parallelWorkLoad merge (V.++) q_partition (\x -> V.length x < 2) id
+qsortSkel = fixedDivideAndConquer parallelWorkLoad merge (V.++) q_partition (\x -> V.length x < 2) id
   where
     q_partition xs
       = let h = V.head xs
