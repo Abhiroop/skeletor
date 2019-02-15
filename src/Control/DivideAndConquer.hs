@@ -40,6 +40,16 @@ fixedDivideAndConquer k parMerge seqMerge seqSplit continue f
                                             then u `seqMerge` (fmap f ta) -- fix point reached
                                             else u `seqMerge` (func ta')) mempty mta
 
+{-# INLINE fixedDivideAndConquer' #-}
+fixedDivideAndConquer' :: (Parallelizable t)
+                      => K -- number of subproblems in each split for the parallel workload
+                      -> (t b -> t b -> t b) -- the sequential merge operator for parallel workload
+                      -> (t a -> t b)  -- the function to be applied
+                      -> t a
+                      -> t b
+fixedDivideAndConquer' k merge f = parJoin merge . parSplit k f
+
+
 -- Can we have some fusion rule/deforestation for `join . parMap f . split`
 -- How to make (++) O(1)
 -- Can linear types make (++) O(1)

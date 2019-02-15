@@ -20,11 +20,13 @@ description:         Please see the README on Github at <https://github.com/Abhi
 library
   hs-source-dirs:      src
   exposed-modules:     Bench.Sort
+                     , Bench.SortSeq
                      , Control.DivideAndConquer
                      , Control.Parallel
                      , Utils
-  build-depends:       base >= 4.7 && < 5
-                     , abstract-deque >= 0.3
+  build-depends:       abstract-deque >= 0.3
+                     , base >= 4.7 && < 5
+                     , containers >= 0.5
                      , monad-par >= 0.3
                      , random >= 1.1
                      , vector
@@ -34,12 +36,14 @@ executable skeletor-exe
   hs-source-dirs:      src
   main-is:             Main.hs
   other-modules:       Bench.Sort
+                     , Bench.SortSeq
                      , Control.DivideAndConquer
                      , Control.Parallel
                      , Utils
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N4 -ddump-simpl
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N4
   build-depends:       abstract-deque
                      , base
+                     , containers >= 0.5
                      , monad-par
                      , parallel
                      , random >= 1.1
