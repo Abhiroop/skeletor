@@ -2,7 +2,6 @@ module Bench.SortSeq where
 
 import qualified Data.Sequence as S
 import Data.List
-import Debug.Trace
 import Control.DivideAndConquer
 import System.Random (randomRIO)
 

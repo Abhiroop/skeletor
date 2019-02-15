@@ -1,11 +1,8 @@
 module Control.Parallel where
 
-import Control.Monad (void)
-import Data.List (partition)
 import Data.Concurrent.Deque.Reference
 import GHC.Conc
 import System.IO.Unsafe (unsafePerformIO)
-import Debug.Trace
 import Utils
 
 import qualified Data.Vector as V

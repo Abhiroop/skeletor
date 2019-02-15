@@ -1,7 +1,6 @@
 module Control.DivideAndConquer where
 
 import Control.Parallel
-import Data.Vector hiding (foldl')
 import Data.Foldable (foldl')
 
 
