@@ -78,3 +78,9 @@ Advantage of `vector` is its `slice` operation is O(1)
 
 
 Or can we not use the pointer algorithm and defer the copying? Basically do one final copy where we merge all the vectors? Some form of lazy copyng?
+
+### NEW QUESTIONS
+
+Looking at the divide and conquer skeleton we allow the user to specify only the first layer of workload which means we split only at level one. This works fine for 1D data,
+for 2D data we want to split even further we want another parameter which constricts the depth of the parallel tree. Until that specified step split keeps splitting the elements
+in the deque, after it reaches that step join starts.
