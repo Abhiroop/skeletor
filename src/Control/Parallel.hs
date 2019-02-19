@@ -118,6 +118,8 @@ else do {kill dead threads; recurse with the live threads}
 
 
 -}
+
+
 instance Parallelizable S.Seq where
   {-# INLINE parSplit #-}
   parSplit k f s = go s newQ []
