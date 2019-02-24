@@ -15,19 +15,27 @@ import qualified Data.Vector as V
 data Tree a = Leaf
             | Node a (Tree a) (Tree a)
 
-data Matrix a = Mat2X2 (Matrix a) (Matrix a) (Matrix a) (Matrix a)
-              | Mat1X2 (Matrix a) (Matrix a)
-              | Mat2X1 (Matrix a) (Matrix a)
-              | Elem a
-              | Nil
+-- data Matrix a = Mat2X2 (Matrix a) (Matrix a) (Matrix a) (Matrix a)
+--               | Mat1X2 (Matrix a) (Matrix a)
+--               | Mat2X1 (Matrix a) (Matrix a)
+--               | Elem a
+--               | Nil
 
-foo = Mat2X2 (Elem 1) (Elem 2) (Elem 3) (Elem 4)
 
-bar = Mat2X2 (Elem 5) (Elem 6) (Elem 7) (Elem 8)
+-- foo = Mat2X2 (Elem 1) (Elem 2) (Elem 3) (Elem 4)
+
+-- bar = Mat2X2 (Elem 5) (Elem 6) (Elem 7) (Elem 8)
 
 -- mult :: Matrix a -> Matrix a -> Matrix a
 -- mult (Mat e1 e2 e3 e4) (Mat e5 e6 e7 e8)
 --   = Mat (e1*e5 + e2*e7) 0 0 0
+
+data Matrix a = B (Matrix a) (Matrix a)
+              | A (Matrix a) (Matrix a)
+              | S a
+              deriving Show
+
+foo = B (A (B (S 1) (S 2)) (S 3)) (S 4) -- allows something like this which is incorrect
 
 -- data Matrix (r :: Nat) (c :: Nat) (e :: *) = Matrix { rows :: !Int
 --                                                     , cols :: !Int
