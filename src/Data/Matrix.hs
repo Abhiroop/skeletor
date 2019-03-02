@@ -1,53 +1,45 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Data.Matrix where
 
-import GHC.TypeLits
-
-import Data.Proxy (Proxy(..))
 import qualified Data.Vector as V
 
+data Nat = Z
+         | Succ Nat
+         deriving Show
 
-data Tree a = Leaf
-            | Node a (Tree a) (Tree a)
-
--- data Matrix a = Mat2X2 (Matrix a) (Matrix a) (Matrix a) (Matrix a)
---               | Mat1X2 (Matrix a) (Matrix a)
---               | Mat2X1 (Matrix a) (Matrix a)
---               | Elem a
---               | Nil
+type One = Succ Z
+type Two = Succ One
 
 
--- foo = Mat2X2 (Elem 1) (Elem 2) (Elem 3) (Elem 4)
+toNat :: Int -> Nat
+toNat 0 = Z
+toNat n = Succ (toNat $ n - 1)
 
--- bar = Mat2X2 (Elem 5) (Elem 6) (Elem 7) (Elem 8)
+fromNat :: Nat -> Int
+fromNat Z = 0
+fromNat (Succ n) = 1 + fromNat n
 
--- mult :: Matrix a -> Matrix a -> Matrix a
--- mult (Mat e1 e2 e3 e4) (Mat e5 e6 e7 e8)
---   = Mat (e1*e5 + e2*e7) 0 0 0
+-- fromNat . toNat = id
 
-data Matrix a = B (Matrix a) (Matrix a)
-              | A (Matrix a) (Matrix a)
-              | S a
-              deriving Show
+type family Plus a b where
+  Plus Z     n    = n
+  Plus (Succ m) n = Succ (Plus m n)
 
-foo = B (A (B (S 1) (S 2)) (S 3)) (S 4) -- allows something like this which is incorrect
+data Matrix r c a where
+  B :: Matrix r c1 a -> Matrix r c2 a -> Matrix r (Plus c1 c2) a
+  A :: Matrix r1 c a -> Matrix r2 c a -> Matrix (Plus r1 r2) c a
+  S :: a -> Matrix One One a
 
--- data Matrix (r :: Nat) (c :: Nat) (e :: *) = Matrix { rows :: !Int
---                                                     , cols :: !Int
---                                                     , elems :: V.Vector e } -- some strucuture which has efficient slice and concat
+foo = A (B (S 1) (S 2)) (B (S 3) (S 4))
+bar = A (B (S 5) (S 6)) (B (S 7) (S 8))
 
--- nrows :: forall m n a. KnownNat m => Matrix m n a -> Int
--- nrows = const m
---   where m = fromInteger $ natVal @m Proxy
-
--- ncols :: forall m n a. KnownNat n => Matrix m n a -> Int
--- ncols = const n
---   where n = fromInteger $ natVal @n Proxy
 
 
 -- the dimensions stuff seems to complicate the implementation rather than simplify it
