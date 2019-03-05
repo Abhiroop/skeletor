@@ -39,6 +39,18 @@ data Matrix r c a where
 
 foo = A (B (S 1) (S 2)) (B (S 3) (S 4))
 bar = A (B (S 5) (S 6)) (B (S 7) (S 8))
+baz = B (B (A (S 1) (S 2)) (A (S 3) (S 4))) (A (S 5) (S 6))
+
+
+type ColIndex = Int
+type RowIndex = Int
+
+slice :: (Plus c1 c2 ~ c) => Matrix r c e ->  ColIndex -> (Matrix r c1 e, Matrix r c2 e)
+slice = undefined
+
+partition :: (Plus r1 r2 ~ r) => Matrix r c e ->  RowIndex -> (Matrix r1 c e, Matrix r2 c e)
+partition = undefined
+
 
 
 
