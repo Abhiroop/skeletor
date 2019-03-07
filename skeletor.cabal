@@ -27,6 +27,7 @@ library
   build-depends:       abstract-deque >= 0.3
                      , base >= 4.7 && < 5
                      , containers >= 0.5
+                     , matrix
                      , monad-par >= 0.3
                      , random >= 1.1
                      , vector
@@ -44,6 +45,7 @@ executable skeletor-exe
   build-depends:       abstract-deque
                      , base
                      , containers >= 0.5
+                     , matrix
                      , monad-par
                      , parallel
                      , random >= 1.1

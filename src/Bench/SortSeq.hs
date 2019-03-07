@@ -50,14 +50,14 @@ mergesort xs
 
 -- Merge sort parallel
 
-{-# SPECIALISE fixedDivideAndConquer' :: Int
+{-# SPECIALISE mapSkel' :: Int
                       -> (S.Seq Int -> S.Seq Int -> S.Seq Int)
                       -> (S.Seq Int -> S.Seq Int)
                       -> S.Seq Int
                       -> S.Seq Int
  #-}
 sortSkelM :: S.Seq Int -> S.Seq Int
-sortSkelM = fixedDivideAndConquer' parallelWorkLoad merge S.sort
+sortSkelM = mapSkel' parallelWorkLoad merge S.sort
 
 {-
 
@@ -73,7 +73,7 @@ id' x = x
 
 -- specialising perhaps saves the dictionary lookup but isn't a huge optimisation
 -- Merge sort parallel and more general
-{-# SPECIALISE fixedDivideAndConquer :: Int
+{-# SPECIALISE mapSkel :: Int
                       -> (S.Seq Int -> S.Seq Int -> S.Seq Int)
                       -> (S.Seq Int -> S.Seq Int -> S.Seq Int)
                       -> (S.Seq Int -> [(S.Seq Int)])
@@ -83,7 +83,7 @@ id' x = x
                       -> S.Seq Int
  #-}
 msortSkel :: S.Seq Int -> S.Seq Int
-msortSkel = fixedDivideAndConquer parallelWorkLoad merge merge m_partition (\x -> S.length x < 2) id
+msortSkel = mapSkel parallelWorkLoad merge merge m_partition (\x -> S.length x < 2) id
   where
     m_partition xs
       = let (first, second) = S.splitAt (S.length xs `div` 2) xs
@@ -106,7 +106,7 @@ msortSkel = fixedDivideAndConquer parallelWorkLoad merge merge m_partition (\x -
 
 -- Quick sort parallel and more general
 -- qsortSkel :: V.Vector Int -> V.Vector Int
--- qsortSkel = fixedDivideAndConquer parallelWorkLoad merge (V.++) q_partition (\x -> V.length x < 2) id
+-- qsortSkel = mapSkel parallelWorkLoad merge (V.++) q_partition (\x -> V.length x < 2) id
 --   where
 --     q_partition xs
 --       = let h = V.head xs

@@ -19,17 +19,17 @@ import Data.Foldable (foldl')
 
 -- | Fixed Degree Divide And Conquer
 
-{-# INLINE fixedDivideAndConquer #-}
-fixedDivideAndConquer :: (Parallelizable t, Functor t, Foldable m, Monoid (t b), Eq (t a))
-                      => K -- number of subproblems in each split for the parallel workload
-                      -> (t b -> t b -> t b) -- parallel merge
-                      -> (t b -> t b -> t b) -- sequential merge
-                      -> (t a -> m (t a))    -- sequential split
-                      -> (t a -> Bool)       -- divide further?
-                      -> (a -> b)            -- a general function mostly use id for same datatype
-                      -> t a
-                      -> t b
-fixedDivideAndConquer k parMerge seqMerge seqSplit continue f
+{-# INLINE mapSkel #-}
+mapSkel :: (Parallelizable t, Functor t, Foldable m, Monoid (t b), Eq (t a))
+        => K -- number of subproblems in each split for the parallel workload
+        -> (t b -> t b -> t b) -- parallel merge
+        -> (t b -> t b -> t b) -- sequential merge
+        -> (t a -> m (t a))    -- sequential split
+        -> (t a -> Bool)       -- divide further?
+        -> (a -> b)            -- a general function mostly use id for same datatype
+        -> t a
+        -> t b
+mapSkel k parMerge seqMerge seqSplit continue f
   = parJoin parMerge . parSplit k func
   where
     func ta
@@ -39,14 +39,14 @@ fixedDivideAndConquer k parMerge seqMerge seqSplit continue f
                                             then u `seqMerge` (fmap f ta) -- fix point reached
                                             else u `seqMerge` (func ta')) mempty mta
 
-{-# INLINE fixedDivideAndConquer' #-}
-fixedDivideAndConquer' :: (Parallelizable t)
+{-# INLINE mapSkel' #-}
+mapSkel' :: (Parallelizable t)
                       => K -- number of subproblems in each split for the parallel workload
                       -> (t b -> t b -> t b) -- the sequential merge operator for parallel workload
                       -> (t a -> t b)  -- the function to be applied
                       -> t a
                       -> t b
-fixedDivideAndConquer' k merge f = parJoin merge . parSplit k f
+mapSkel' k merge f = parJoin merge . parSplit k f
 
 
 -- Can we have some fusion rule/deforestation for `join . parMap f . split`

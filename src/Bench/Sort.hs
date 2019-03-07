@@ -70,7 +70,7 @@ id' x = x
 
 -- specialising perhaps saves the dictionary lookup but isn't a huge optimisation
 -- Merge sort parallel and more general
-{-# SPECIALISE fixedDivideAndConquer :: Int
+{-# SPECIALISE mapSkel :: Int
                       -> (V.Vector Int -> V.Vector Int -> V.Vector Int)
                       -> (V.Vector Int -> V.Vector Int -> V.Vector Int)
                       -> (V.Vector Int -> [(V.Vector Int)])
@@ -80,7 +80,7 @@ id' x = x
                       -> V.Vector Int
  #-}
 msortSkel :: V.Vector Int -> V.Vector Int
-msortSkel = fixedDivideAndConquer parallelWorkLoad merge merge m_partition (\x -> V.length x < 2) id
+msortSkel = mapSkel parallelWorkLoad merge merge m_partition (\x -> V.length x < 2) id
   where
     m_partition xs
       = let (first, second) = V.splitAt (V.length xs `div` 2) xs
@@ -103,7 +103,7 @@ qsort xs
 
 -- Quick sort parallel and more general
 qsortSkel :: V.Vector Int -> V.Vector Int
-qsortSkel = fixedDivideAndConquer parallelWorkLoad merge (V.++) q_partition (\x -> V.length x < 2) id
+qsortSkel = mapSkel parallelWorkLoad merge (V.++) q_partition (\x -> V.length x < 2) id
   where
     q_partition xs
       = let h = V.head xs
