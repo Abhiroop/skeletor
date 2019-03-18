@@ -1,27 +1,40 @@
-module MMult where
+module Bench.MMult where
 
 import Data.Matrix
+import qualified Data.Vector as V
+import Control.DivideAndConquer
+import Control.Applicative
 
-matmult :: Matrix a -> Matrix a -> Matrix a
-matmult m1 m2 = undefined
-  -- let c1    = cols m -- gives all the columns
-  --     (h1,t1) = slice m (c1/2) -- (c/2) is some kind of type level division
-  --     rm1    = rows h1
-  --     rm2    = rows t1
-  --     (p1, p3) = partition (rm1/2) h1
-  --     (p2, p4) = partition (rm2/2) t1
+mulThreshold = 64  -- 64 * 64 * 8 = 32768 L1 cache size
+addThreshold = 2000 -- 2000 * 2000 = 4 million elements single threaded
 
-  --     c2     = cols m -- gives all the columns
-  --     (h2,t2) = slice m (c2/2) -- (c/2) is some kind of type level division
-  --     rn1    = rows h2
-  --     rn2    = rows t2
-  --     (p5, p7) = partition (r/2) h2
-  --     (p6, p8) = partition (r/2) t2
+(%*%) :: (Num a) => Matrix a -> Matrix a -> Matrix a
+(%*%) m1 m2
+  | nrows m1 <= mulThreshold && ncols m2 <= mulThreshold = multStrassen m1 m2
+  | otherwise
+    = let r = nrows m1
+          c = ncols m2
+          (p1, p2, p3, p4) = splitBlocks (r `div` 2) (c `div` 2) m1
+          (p5, p6, p7, p8) = splitBlocks (r `div` 2) (c `div` 2) m2
+          x = (p1 %*% p5) %+% (p2 %*% p7)
+          y = (p1 %*% p6) %+% (p2 %*% p8)
+          z = (p3 %*% p5) %+% (p4 %*% p7)
+          w = (p3 %*% p6) %+% (p4 %*% p8)
+      in joinBlocks (x, y, z, w)
 
+(%+%) :: (Num a) => Matrix a -> Matrix a -> Matrix a
+(%+%) m1 m2
+  | nrows m1 <= addThreshold && ncols m2 <= addThreshold
+    = undefined
+  | otherwise
+    = let r = nrows m1
+          c = ncols m2
+          (p1, p2, p3, p4) = splitBlocks (r `div` 2) (c `div` 2) m1
+          (p5, p6, p7, p8) = splitBlocks (r `div` 2) (c `div` 2) m2
+          x = (p1 %+% p5)
+          y = (p2 %+% p6)
+          z = (p3 %+% p7)
+          w = (p4 %+% p8)
+      in joinBlocks (x, y, z, w)
 
-
-  --     a = p1*p5 + p2*p7
-  --     b = p1*p6 + p2*p8
-  --     c = p3*p5 + p4*p7
-  --     d = p3*p6 + p4*p8
-  --   in (copartition a b) `coslice` (copartition c d)
+-- foo = zipSkel 5 (V.++) undefined undefined (*) (V.fromList (ZipList [1..10])) (V.fromList (ZipList [1..10]))

@@ -16,6 +16,12 @@ class Parallelizable t where
     -> (t a -> t b)
     -> t a
     -> IO (SimpleDeque (t b))
+  parSplit2 ::
+       K -- partition size
+    -> (t a -> t b -> t c)
+    -> t a
+    -> t b
+    -> IO (SimpleDeque (t c))
   parJoin ::
        (t b -> t b -> t b) -- how do you join?
     -> IO (SimpleDeque (t b))
@@ -71,6 +77,26 @@ instance Parallelizable V.Vector where
                 tid <- forkIO $ pushR q (merge e1 e2) -- cpu intensive could be vectorized as well additionally merge for vector will be costly
                 finalElem (return q) (tid:threads)
 
+  {-# INLINE parSplit2 #-}
+  parSplit2 k f vec1 vec2 = go 0 newQ []
+    where
+      go i dq threads
+        | ((i + k) < V.length vec1) && ((i + k) < V.length vec2)= do
+            q   <- dq;
+            tid <- forkIO $ pushR q (f (V.unsafeSlice i k vec1) (V.unsafeSlice i k vec2));
+            go (i + k) (return q) (tid :threads)
+        | otherwise = do
+            q <- dq;
+            --- a cyclic barrier ---
+            tStatus <- traverse threadStatus threads
+            if any (/= ThreadFinished) tStatus
+            then go i dq threads
+            ------------------------
+            else do {
+                    pushR q (f (V.unsafeSlice i (V.length vec1 - i) vec1) (V.unsafeSlice i (V.length vec2 - i) vec2));
+                    killThreads threads; -- be a good citizen! clean up resources! XXX: This is an O(n) operation could it slow us down?
+                    return q
+                    }
 
 
 

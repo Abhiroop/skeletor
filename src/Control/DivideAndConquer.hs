@@ -1,5 +1,7 @@
 module Control.DivideAndConquer where
 
+import Control.Applicative
+import Control.Monad
 import Control.Parallel
 import Data.Foldable (foldl')
 
@@ -61,3 +63,55 @@ mapSkel' k merge f = parJoin merge . parSplit k f
 -- so instead of copying keep *head as constant and instead of a consistent size now have another pointer *next = head of the next array
 -- when calculating the size, traverse the chain of pointers until *next = null and recursively add size
 -- and append is just traversing the chain of next pointers until it hits null and then point that pointer to the head of the second array
+
+
+
+-- parJoin parMerge . parSplit k (liftA2 f $ ta)
+{-# INLINE zipSkel #-}
+zipSkel :: (Parallelizable t, Functor t, Applicative t)
+        => K -- number of subproblems in each split for the parallel workload
+        -> (t c -> t c -> t c) -- parallel merge
+        -> (t a -> Bool)
+        -> (t b -> Bool)
+        -> (a -> b -> c)
+        -> t a
+        -> t b
+        -> t c
+zipSkel k parMerge contA contB f
+  = (.) (parJoin parMerge) . parSplit2 k (liftA2 f)
+
+--------------------------------------------------------------------------------------
+dcA :: DC t
+    => (a -> Bool)
+    -> (a -> b)
+    -> (a -> t a)
+    -> (a -> t b -> b)
+    -> a
+    -> b
+dcA isTrivial basic split combine = r
+  where
+    r x
+      | isTrivial x = basic x
+      | otherwise   = combine x (pmap r (split x))
+
+
+
+foo :: [Int] -> [Int]
+foo = undefined
+
+chunkify :: [Int] -> [[Int]]
+chunkify = undefined
+
+msort :: [Int] -> [Int]
+msort = dcA isTrivial basic split combine
+  where
+    isTrivial xs = length xs > 10
+    basic     = foo
+    split     = chunkify
+    combine _ = join
+
+class DC f where
+  pmap :: (a -> b) -> f a -> f b
+
+instance DC [] where
+  pmap = undefined

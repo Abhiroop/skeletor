@@ -21,6 +21,7 @@ library
   hs-source-dirs:      src
   exposed-modules:     Bench.Sort
                      , Bench.SortSeq
+                     , Bench.MMult
                      , Control.DivideAndConquer
                      , Control.Parallel
                      , Utils
@@ -38,6 +39,7 @@ executable skeletor-exe
   main-is:             Main.hs
   other-modules:       Bench.Sort
                      , Bench.SortSeq
+                     , Bench.MMult
                      , Control.DivideAndConquer
                      , Control.Parallel
                      , Utils
