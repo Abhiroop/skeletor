@@ -37,4 +37,3 @@ addThreshold = 2000 -- 2000 * 2000 = 4 million elements single threaded
           w = (p4 %+% p8)
       in joinBlocks (x, y, z, w)
 
--- foo = zipSkel 5 (V.++) undefined undefined (*) (V.fromList (ZipList [1..10])) (V.fromList (ZipList [1..10]))

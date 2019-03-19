@@ -48,8 +48,7 @@ mapSkel' :: (Parallelizable t)
                       -> (t a -> t b)  -- the function to be applied
                       -> t a
                       -> t b
-mapSkel' k merge f = parJoin merge . parSplit k f
-
+mapSkel' k merge f xs = parJoin merge $ parSplit k f xs
 
 -- Can we have some fusion rule/deforestation for `join . parMap f . split`
 -- How to make (++) O(1)
@@ -67,33 +66,20 @@ mapSkel' k merge f = parJoin merge . parSplit k f
 
 
 -- parJoin parMerge . parSplit k (liftA2 f $ ta)
-{-# INLINE zipSkel #-}
-zipSkel :: (Parallelizable t, Functor t, Applicative t)
-        => K -- number of subproblems in each split for the parallel workload
-        -> (t c -> t c -> t c) -- parallel merge
-        -> (t a -> Bool)
-        -> (t b -> Bool)
-        -> (a -> b -> c)
-        -> t a
-        -> t b
-        -> t c
-zipSkel k parMerge contA contB f
-  = (.) (parJoin parMerge) . parSplit2 k (liftA2 f)
 
 --------------------------------------------------------------------------------------
 dcA :: DC t
     => (a -> Bool)
     -> (a -> b)
     -> (a -> t a)
-    -> (a -> t b -> b)
+    -> (t b -> b)
     -> a
     -> b
 dcA isTrivial basic split combine = r
   where
     r x
       | isTrivial x = basic x
-      | otherwise   = combine x (pmap r (split x))
-
+      | otherwise   = (combine . pmap r . split) x
 
 
 foo :: [Int] -> [Int]
@@ -102,16 +88,24 @@ foo = undefined
 chunkify :: [Int] -> [[Int]]
 chunkify = undefined
 
+
 msort :: [Int] -> [Int]
 msort = dcA isTrivial basic split combine
   where
-    isTrivial xs = length xs > 10
-    basic     = foo
-    split     = chunkify
-    combine _ = join
+    isTrivial xs = length xs <= 1
+    basic     = id
+    split xs  = [take (half xs) xs, drop (half xs) xs]
+    combine   = foldr1 merge
+    half   xs = length xs `div` 2
+    merge [] [] = []
+    merge [] ys = ys
+    merge xs [] = xs
+    merge f@(x:xs) l@(y:ys)
+      | x < y = x : (merge xs l)
+      | otherwise = y : (merge f ys)
 
 class DC f where
   pmap :: (a -> b) -> f a -> f b
 
 instance DC [] where
-  pmap = undefined
+  pmap = fmap
