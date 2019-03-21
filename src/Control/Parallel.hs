@@ -10,7 +10,7 @@ import qualified Data.Sequence as S
 
 type K = Int
 
-class Parallelizable t where
+class (Applicative t) => Parallelizable t where
   parSplit ::
        K -- partition size
     -> (t a -> t b)
@@ -21,8 +21,25 @@ class Parallelizable t where
     -> IO (SimpleDeque (t b))
     -> t b
 
+  foldmap :: (Monoid m) => (a -> m) -> t a -> m
+
+  pmap :: (Monoid (t b)) => (a -> b) -> t a -> t b
+  pmap f = foldmap (\x -> pure $ f x)
+
 
 instance Parallelizable V.Vector where
+  {-# INLINE foldmap #-}
+  foldmap f = go
+    where
+      go xs
+        | null xs = mempty
+        | length xs == 1 = f $ V.head xs
+        | otherwise = gol `par` gor `pseq` mappend gol gor
+        where
+          gol = go left
+          gor = go right
+          (left, right) = V.splitAt (V.length xs `div` 2) xs
+
   {-# INLINE parSplit #-}
   parSplit k f vec = go 0 newQ []
     where
@@ -115,7 +132,23 @@ else do {kill dead threads; recurse with the live threads}
 
 
 -}
+
+
 instance Parallelizable S.Seq where
+  {-# INLINE foldmap #-}
+  foldmap f = go
+    where
+      go xs
+        | null xs = mempty
+        | length xs == 1 = case S.viewl xs of
+                             S.EmptyL -> mempty
+                             x S.:< _ -> f x
+        | otherwise = gol `par` gor `pseq` mappend gol gor
+        where
+          gol = go left
+          gor = go right
+          (left, right) = S.splitAt (S.length xs `div` 2) xs
+
   {-# INLINE parSplit #-}
   parSplit k f s = go s newQ []
     where

@@ -5,4 +5,4 @@ import Bench.Sort
 import Bench.SortSeq
 
 main :: IO ()
-main = bench2
+main = bench1

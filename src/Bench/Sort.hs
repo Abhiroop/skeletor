@@ -22,7 +22,7 @@ bench1 = do
   print $ "Starting sort for list of length " ++ show (length l)
   let -- vec   = mergesort (V.fromList l)
       -- vec   = sortSkelM (V.fromList l)
-      vec   = msortSkel (V.fromList l)
+      vec   = msort (V.fromList l)
   --print vec
   print $ V.length vec
 
@@ -85,6 +85,15 @@ msortSkel = mapSkel parallelWorkLoad merge merge m_partition (\x -> V.length x <
     m_partition xs
       = let (first, second) = V.splitAt (V.length xs `div` 2) xs
          in [first,second]
+
+msort :: V.Vector Int -> V.Vector Int
+msort = dcA isTrivial basic split combine
+  where
+    isTrivial = (\x -> V.length x < 2)
+    basic     = id
+    split xs  = let (first, second) = V.splitAt (V.length xs `div` 2) xs
+                 in V.fromList [first, second]
+    combine   = V.foldr1 merge
 
 --------------------------------------------------------------------------
 -- Quick sort

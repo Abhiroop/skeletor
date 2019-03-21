@@ -36,4 +36,3 @@ addThreshold = 2000 -- 2000 * 2000 = 4 million elements single threaded
           z = (p3 %+% p7)
           w = (p4 %+% p8)
       in joinBlocks (x, y, z, w)
-

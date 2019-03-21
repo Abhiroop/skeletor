@@ -68,7 +68,13 @@ mapSkel' k merge f xs = parJoin merge $ parSplit k f xs
 -- parJoin parMerge . parSplit k (liftA2 f $ ta)
 
 --------------------------------------------------------------------------------------
-dcA :: DC t
+----------------- D&C redesign-------------------
+
+
+
+
+
+dcA :: (Parallelizable t, Monoid (t b))
     => (a -> Bool)
     -> (a -> b)
     -> (a -> t a)
@@ -82,30 +88,17 @@ dcA isTrivial basic split combine = r
       | otherwise   = (combine . pmap r . split) x
 
 
-foo :: [Int] -> [Int]
-foo = undefined
-
-chunkify :: [Int] -> [[Int]]
-chunkify = undefined
-
-
-msort :: [Int] -> [Int]
-msort = dcA isTrivial basic split combine
-  where
-    isTrivial xs = length xs <= 1
-    basic     = id
-    split xs  = [take (half xs) xs, drop (half xs) xs]
-    combine   = foldr1 merge
-    half   xs = length xs `div` 2
-    merge [] [] = []
-    merge [] ys = ys
-    merge xs [] = xs
-    merge f@(x:xs) l@(y:ys)
-      | x < y = x : (merge xs l)
-      | otherwise = y : (merge f ys)
-
-class DC f where
-  pmap :: (a -> b) -> f a -> f b
-
-instance DC [] where
-  pmap = fmap
+-- msort :: [Int] -> [Int]
+-- msort = dcA isTrivial basic split combine
+--   where
+--     isTrivial xs = length xs <= 1
+--     basic     = id
+--     split xs  = [take (half xs) xs, drop (half xs) xs]
+--     combine   = foldr1 merge
+--     half   xs = length xs `div` 2
+--     merge [] [] = []
+--     merge [] ys = ys
+--     merge xs [] = xs
+--     merge f@(x:xs) l@(y:ys)
+--       | x < y = x : (merge xs l)
+--       | otherwise = y : (merge f ys)
