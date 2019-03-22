@@ -22,7 +22,7 @@ bench1 = do
   print $ "Starting sort for list of length " ++ show (length l)
   let -- vec   = mergesort (V.fromList l)
       -- vec   = sortSkelM (V.fromList l)
-      vec   = msort (V.fromList l)
+      vec   = mergesort (V.fromList l)
   --print vec
   print $ V.length vec
 
